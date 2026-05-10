@@ -107,14 +107,14 @@ async function verifyInteractions(browser) {
 
   await page.locator(".cell-row").filter({ hasText: "Plant Cell" }).click();
   await page.waitForSelector("canvas", { timeout: 15000 });
-  await page.waitForTimeout(1600);
+  await page.waitForTimeout(7000);
   const plantModelMetrics = await readVisualMetrics(page, "canvas");
   assert(plantModelMetrics.nonPaperRatio > 0.05, "plant GLB appears blank");
   assert(plantModelMetrics.variance > 120, "plant GLB has too little pixel variation");
 
   await page.locator(".cell-row").filter({ hasText: "White Blood Cell" }).click();
   await page.waitForSelector("canvas", { timeout: 15000 });
-  await page.waitForTimeout(5000);
+  await page.waitForTimeout(7000);
   const whiteBloodModelMetrics = await readVisualMetrics(page, "canvas");
   assert(whiteBloodModelMetrics.nonPaperRatio > 0.05, "white blood GLB appears blank");
   assert(whiteBloodModelMetrics.variance > 120, "white blood GLB has too little pixel variation");
