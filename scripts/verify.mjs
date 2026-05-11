@@ -73,6 +73,7 @@ async function verifyViewport(browser, name, viewport) {
 
   const title = await page.locator(".stage-title h2").innerText();
   const cellCount = await page.locator(".cell-row").count();
+  const tutorText = await page.locator(".learning-panel").innerText();
   const modeTitles = await page.locator(".mode-switcher button").evaluateAll((buttons) =>
     buttons.map((button) => button.getAttribute("title")),
   );
@@ -84,6 +85,8 @@ async function verifyViewport(browser, name, viewport) {
 
   assert(title.includes("Animal Cell"), `${name}: initial title mismatch`);
   assert(cellCount === 7, `${name}: expected 7 cells, received ${cellCount}`);
+  assert(tutorText.toLowerCase().includes("ai tutor"), `${name}: AI tutor panel is missing`);
+  assert(tutorText.toLowerCase().includes("mastery"), `${name}: mastery tracker is missing`);
   assert(activeMode === "Mesh", `${name}: default mode should be Mesh`);
   assert(modeTitles.length === 2 && modeTitles.includes("Mesh") && modeTitles.includes("Focus"), `${name}: unexpected mode buttons`);
   assert(visualBox && visualBox.width > 260 && visualBox.height > 220, `${name}: visual is too small`);
@@ -134,6 +137,11 @@ async function verifyInteractions(browser) {
   const detailTitle = await page.locator(".detail-hero h3").innerText();
   assert(detailTitle.includes("Flagellum"), "organelle switch did not update details");
 
+  await page.locator(".prompt-list button").first().click();
+  await page.waitForTimeout(250);
+  const tutorPrompt = await page.locator(".tutor-prompt p").innerText();
+  assert(tutorPrompt.includes("Flagellum"), "AI tutor prompt did not update");
+
   await page.getByRole("button", { name: /Open Comparison View/ }).click();
   await page.waitForTimeout(250);
   const modalTitle = await page.locator(".comparison-modal h3").innerText();
@@ -146,6 +154,7 @@ async function verifyInteractions(browser) {
   return {
     title,
     detailTitle,
+    tutorPrompt,
     modalTitle,
     plantModelMetrics,
     whiteBloodModelMetrics,

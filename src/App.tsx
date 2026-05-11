@@ -2,14 +2,17 @@ import {
   ArrowRight,
   BookOpen,
   Box,
+  Brain,
   Camera,
   ChevronDown,
   CircleDot,
+  Gauge,
   EyeOff,
   Grid3X3,
   Heart,
   Info,
   Leaf,
+  MessageCircle,
   Library,
   Microscope,
   Plus,
@@ -17,6 +20,7 @@ import {
   Settings,
   Sparkles,
   Star,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
@@ -307,11 +311,37 @@ type RightPanelProps = {
   cell: CellItem;
   activeOrganelle: string;
   favorites: Set<string>;
+  mastery: number;
+  viewedCellCount: number;
+  viewedOrganelleCount: number;
+  totalOrganelleCount: number;
+  tutorPrompt: string;
   onToggleFavorite: (id: string) => void;
+  onTutorPrompt: (prompt: string) => void;
 };
 
-function RightPanel({ cell, activeOrganelle, favorites, onToggleFavorite }: RightPanelProps) {
+function buildTutorPrompts(cell: CellItem, organelle: CellItem["organelles"][number]) {
+  return [
+    `Explain how ${organelle.name} helps a ${cell.name} stay alive.`,
+    `Quiz me on the visual differences between ${cell.name} and ${getCellById(cell.comparison).name}.`,
+    `Guide me through finding ${organelle.name} inside the 3D model.`,
+  ];
+}
+
+function RightPanel({
+  cell,
+  activeOrganelle,
+  favorites,
+  mastery,
+  viewedCellCount,
+  viewedOrganelleCount,
+  totalOrganelleCount,
+  tutorPrompt,
+  onToggleFavorite,
+  onTutorPrompt,
+}: RightPanelProps) {
   const organelle = cell.organelles.find((item) => item.id === activeOrganelle) ?? cell.organelles[0];
+  const tutorPrompts = buildTutorPrompts(cell, organelle);
 
   return (
     <aside className="right-rail">
@@ -356,6 +386,56 @@ function RightPanel({ cell, activeOrganelle, favorites, onToggleFavorite }: Righ
         <div className="fun-fact">
           <span>Fun Fact: {organelle.fact}</span>
           <Sparkles size={18} />
+        </div>
+      </section>
+
+      <section className="panel learning-panel">
+        <div className="panel-heading">
+          <span>
+            <Brain size={17} />
+            AI Tutor
+          </span>
+        </div>
+
+        <div className="mastery-meter" style={{ "--progress": `${mastery}%` } as CSSProperties}>
+          <div>
+            <Gauge size={18} />
+            <span>Mastery</span>
+            <strong>{mastery}%</strong>
+          </div>
+          <i>
+            <b />
+          </i>
+          <small>
+            {viewedCellCount}/{cells.length} cells explored · {viewedOrganelleCount}/{totalOrganelleCount} organelles inspected
+          </small>
+        </div>
+
+        <div className="lesson-focus">
+          <span>
+            <Target size={17} />
+            Current lesson focus
+          </span>
+          <p>
+            Locate <strong>{organelle.name}</strong>, explain its role, then compare it with the matching structure in{" "}
+            {getCellById(cell.comparison).name}.
+          </p>
+        </div>
+
+        <div className="tutor-prompt">
+          <span>
+            <MessageCircle size={17} />
+            Prompt staged for AI tutor
+          </span>
+          <p>{tutorPrompt}</p>
+        </div>
+
+        <div className="prompt-list">
+          {tutorPrompts.map((prompt) => (
+            <button type="button" key={prompt} onClick={() => onTutorPrompt(prompt)}>
+              {prompt}
+            </button>
+          ))}
         </div>
       </section>
 
@@ -520,16 +600,45 @@ export default function App() {
   const [autoRotate, setAutoRotate] = useState(true);
   const [resetKey, setResetKey] = useState(0);
   const [favorites, setFavorites] = useState<Set<string>>(() => new Set([initialCell.id]));
+  const [viewedCells, setViewedCells] = useState<Set<string>>(() => new Set([initialCell.id]));
+  const [viewedOrganelleKeys, setViewedOrganelleKeys] = useState<Set<string>>(
+    () => new Set([`${initialCell.id}:${initialCell.defaultOrganelle}`]),
+  );
   const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [tutorPrompt, setTutorPrompt] = useState(
+    `Guide me through finding ${initialCell.organelles[0].name} inside the 3D model.`,
+  );
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
 
   const selectedCell = useMemo(() => getCellById(selectedCellId), [selectedCellId]);
+  const totalOrganelleCount = useMemo(
+    () => cells.reduce((total, cell) => total + cell.organelles.length, 0),
+    [],
+  );
+  const mastery = useMemo(() => {
+    const cellCoverage = viewedCells.size / cells.length;
+    const organelleCoverage = viewedOrganelleKeys.size / totalOrganelleCount;
+    return Math.round((cellCoverage * 0.42 + organelleCoverage * 0.58) * 100);
+  }, [totalOrganelleCount, viewedCells, viewedOrganelleKeys]);
 
   useEffect(() => {
     setActiveOrganelle(selectedCell.defaultOrganelle);
     setComparisonOpen(false);
   }, [selectedCell]);
+
+  useEffect(() => {
+    setViewedCells((current) => {
+      const next = new Set(current);
+      next.add(selectedCell.id);
+      return next;
+    });
+    setViewedOrganelleKeys((current) => {
+      const next = new Set(current);
+      next.add(`${selectedCell.id}:${activeOrganelle}`);
+      return next;
+    });
+  }, [activeOrganelle, selectedCell.id]);
 
   function showToast(message: string) {
     setToast(message);
@@ -599,7 +708,16 @@ export default function App() {
           cell={selectedCell}
           activeOrganelle={activeOrganelle}
           favorites={favorites}
+          mastery={mastery}
+          viewedCellCount={viewedCells.size}
+          viewedOrganelleCount={viewedOrganelleKeys.size}
+          totalOrganelleCount={totalOrganelleCount}
+          tutorPrompt={tutorPrompt}
           onToggleFavorite={toggleFavorite}
+          onTutorPrompt={(prompt) => {
+            setTutorPrompt(prompt);
+            showToast("AI tutor prompt staged.");
+          }}
         />
       </div>
 

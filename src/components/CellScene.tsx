@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Center, ContactShadows, Float, OrbitControls, RoundedBox, useGLTF } from "@react-three/drei";
+import { Center, ContactShadows, Float, Html, OrbitControls, RoundedBox, useGLTF, useProgress } from "@react-three/drei";
 import { Suspense, useMemo, useRef } from "react";
 import {
   Color,
@@ -918,6 +918,24 @@ function CellModel({
   );
 }
 
+function ModelLoadingOverlay({ cell }: { cell: CellItem }) {
+  const { progress } = useProgress();
+  const displayProgress = Math.max(8, Math.min(100, Math.round(progress)));
+
+  return (
+    <Html center className="model-loader">
+      <div>
+        <span>Loading 3D specimen</span>
+        <strong>{cell.name}</strong>
+        <i>
+          <b style={{ width: `${displayProgress}%` }} />
+        </i>
+        <em>{displayProgress}%</em>
+      </div>
+    </Html>
+  );
+}
+
 export function CellScene({
   cell,
   activeOrganelle,
@@ -970,7 +988,7 @@ export function CellScene({
         intensity={nativeMaterial ? 0.46 : 0.6}
         color={nativeMaterial ? "#ffffff" : cell.accent}
       />
-      <Suspense fallback={null}>
+      <Suspense fallback={<ModelLoadingOverlay cell={cell} />}>
         <Float speed={1.25} rotationIntensity={0.08} floatIntensity={0.18}>
           <CellModel
             cell={cell}

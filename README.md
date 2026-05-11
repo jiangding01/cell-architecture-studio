@@ -25,6 +25,8 @@ An interactive cell architecture gallery built with React, Vite, Three.js, and s
 - Seven specimen views: plant cell, white blood cell, neuron, epithelial cell, bacteria cell, animal cell, and muscle cell.
 - High fidelity Plant Cell and White Blood Cell GLB rendering with native texture preservation.
 - Mesh first experience with 3D canvas rendering as the default view.
+- AI Tutor panel with learning prompts, lesson focus, and mastery tracking.
+- Model loading overlay for large GLB assets on slower networks.
 - Procedural fallback geometry for specimens that do not yet have production GLB assets.
 - Detail panel for organelles, microscope modes, specimen metadata, and comparison workflow.
 - Responsive desktop, compact, and mobile layouts with browser screenshot verification.
